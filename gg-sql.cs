@@ -4,6 +4,7 @@
 #:package Spectre.Console@0.57.0
 
 using Apache.Ignite;
+using Apache.Ignite.Sql;
 using Spectre.Console;
 
 if (args.Length != 1)
@@ -30,8 +31,14 @@ if (rs.AffectedRows >= 0)
 if (rs.HasRowSet)
 {
     var table = new Table()
-        .RoundedBorder()
-        .AddColumns(rs.Metadata.Columns.Select(c => c.Name).ToArray());
+        .RoundedBorder();
+
+    foreach (var col in rs.Metadata.Columns)
+    {
+        table.AddColumn(
+            col.Name,
+            c => c.Alignment(IsNumeric(col.Type) ? Justify.Right : Justify.Left));
+    }
 
     await foreach (var row in rs)
     {
@@ -40,3 +47,6 @@ if (rs.HasRowSet)
 
     AnsiConsole.Write(table);
 }
+
+static bool IsNumeric(ColumnType type) =>
+    type is ColumnType.Int8 or ColumnType.Int16 or ColumnType.Int32 or ColumnType.Int64 or ColumnType.Float or ColumnType.Double or ColumnType.Decimal;
