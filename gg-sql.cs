@@ -1,6 +1,10 @@
 #!/usr/bin/env -S dotnet --
+
 #:package GridGain.Ignite@9.1.23
+#:package Spectre.Console@0.57.0
+
 using Apache.Ignite;
+using Spectre.Console;
 
 if (args.Length != 1)
 {
@@ -25,10 +29,14 @@ if (rs.AffectedRows >= 0)
 
 if (rs.HasRowSet)
 {
-    Console.WriteLine(string.Join(" \t ", rs.Metadata.Columns.Select(c => c.Name)));
+    var table = new Table()
+        .RoundedBorder()
+        .AddColumns(rs.Metadata.Columns.Select(c => c.Name).ToArray());
 
     await foreach (var row in rs)
     {
-        Console.WriteLine(string.Join(" \t ", Enumerable.Range(0, rs.Metadata.Columns.Count).Select(i => row[i])));
+        table.AddRow(Enumerable.Range(0, row.FieldCount).Select(i => row[i]?.ToString() ?? "").ToArray());
     }
+
+    AnsiConsole.Write(table);
 }
